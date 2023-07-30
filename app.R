@@ -6,7 +6,8 @@
 library(shiny)
 library(ggplot2)
 library(dplyr)
-
+library(knitr)
+library(shinythemes)
 
 setwd('/Users/rachel/Documents/GitHub/VideoGame-Dashboard-Repo')
 
@@ -14,6 +15,125 @@ setwd('/Users/rachel/Documents/GitHub/VideoGame-Dashboard-Repo')
 
 #visualize summary tab
 #source("./tab_visuals_summary.R")
+
+
+
+
+##########################################
+####   Shiny UI                       ####
+##########################################
+# ------------------
+# Main title section
+# ------------------
+
+ui = navbarPage(
+  "R. Shaw Portfoilo",
+  theme = shinytheme("flatly"),
+  tabPanel(
+    "Main",
+    # App title ----
+    titlePanel(div(
+      windowTitle = "",
+      img(src = "titlebanner_blue.jpg", width = "100%", class = "bg"),
+    )),
+  
+  ##########################################
+  ####  Panel: Summary                  ####
+  ##########################################
+  tabsetPanel(
+    type = "tabs",
+    tabPanel(
+      "Summary",
+      
+      sidebarLayout(
+        
+        sidebarPanel(
+          #add drop down section to select metric for units sold
+          selectInput(inputId = "units_sold",
+                      label = "Units Sold",
+                      list("Total", "Average")),
+          textOutput("selected_unitssold"),
+          sliderInput("YearRange",
+                      label = "Year Range",
+                      min = 2000,
+                      max = 2020,
+                      value = c(2000, 2020)),
+          
+          selectInput(inputId = "production_cost", 
+                      label = "Production Cost", 
+                      list("Total", "Average")),
+          textOutput("selected_productioncost")
+        ),
+        
+        mainPanel(
+          plotOutput("units_sold_plot"),
+          tableOutput("units_sold_table"),
+          
+          plotOutput("productioncost_plot"),
+          tableOutput("productioncost_table"),
+        )
+        
+        
+      )
+    ),
+    
+    
+    
+    ##########################################
+    ####  Panel: Platform                 ####
+    ##########################################
+    tabPanel(
+      "Platform",
+      
+    ),
+    
+    
+    ##########################################
+    ####  Panel: Genre                    ####
+    ##########################################
+    
+    tabPanel(
+      "Genre"
+    )
+  )
+),
+
+    ################################################
+    #### Panel: Documentation                   ####
+    ################################################
+    
+    tabPanel("Documentation",
+             fluidPage(htmlOutput("doc"))),
+    
+    ################################################
+    #### Panel: About                           ####
+    ################################################
+    tabPanel("About",
+             fluidPage(htmlOutput("abo")))
+)
+
+
+# ui = fluidPage(
+#   h1("Video Game Industry Dashboard"),
+#   
+#   #add drop down section to select metric for units sold
+#   selectInput(inputId = "units_sold", 
+#               label = "Units Sold", 
+#               list("Total", "Average")),
+#   textOutput("selected_unitssold"),
+#   plotOutput("units_sold_plot"),
+#   tableOutput("units_sold_table"),
+#   
+#   #add drop down section to select metric for production cost
+#   selectInput(inputId = "production_cost", 
+#               label = "Production Cost", 
+#               list("Total", "Average")),
+#   textOutput("selected_productioncost"),
+#   plotOutput("productioncost_plot"),
+#   
+# )
+
+
 
 
 
@@ -71,24 +191,22 @@ server = function(input, output) {
         df <- units_sales_db %>% filter(Metric %in% input$units_sold)
       }) 
       
-       # if (input$selected_unitssold == "Total"){
-      #    unitssold_dataset <- summary_sales_db
-      #  }
-      #  else if (input$selected_unitssold == "Average"){
-      #    unitssold_dataset <- summary_avgsales_db
-      # }
-      #  return(unitssold_dataset)
-      #})
-
-    
   #plot
-  output$plot <- renderPlot({
+  output$units_sold_plot <- renderPlot({
     g <- ggplot(unitssold_datasetInput(), aes(y = Sales, x = release_year, color= factor(Region))) 
     g + geom_line() + labs(x="Year",y="Millions of Copies Sold")
   })
   
-  
+  #table
+  top_sales_db <- summary_sales_db %>%
+    filter(!Region == "Global") %>%
+    relocate(`Total Sales`, .before = Region) %>%
+    arrange(desc(`Total Sales`)) %>%
+    slice_head(n=5) 
 
+  output$units_sold_table <- function()({  
+   top_sales_db %>% kable("html", align = 'c', col.names = c("Year", "Total Units Sold", "Region")) %>% kable_styling(c("striped", "hover"), full_width = T, position = "center")
+})
   
   
   
@@ -100,7 +218,7 @@ server = function(input, output) {
     })
   
   #data
-    summary_productioncost_db <- videogamesales_db %>%
+    total_productioncost_db <- videogamesales_db %>%
       group_by(release_year) %>%
       summarise(productioncost = sum(`Production Cost`))
   
@@ -112,7 +230,7 @@ server = function(input, output) {
     productioncost_datasetInput <- reactive({
       req(input$production_cost)
       if (input$production_cost == "Total"){
-        productioncost_dataset <- summary_productioncost_db
+        productioncost_dataset <- total_productioncost_db
       }
       else if (input$production_cost == "Average"){
         productioncost_dataset <- avg_productioncost_db
@@ -122,36 +240,24 @@ server = function(input, output) {
 
 
   #plot production costs total
-
-  output$productioncost_total_plot <- renderPlot({
+  output$productioncost_plot <- renderPlot({
     g <- ggplot(productioncost_datasetInput(), aes(x=release_year, y=productioncost))
     g + geom_line() + labs(x="Year",y="Millions of Dollars")
   })
   
+  #table
+  top_prodcost_db <- total_productioncost_db %>%
+    rename(`Production Cost` = productioncost,
+           Year = release_year) %>%
+    arrange(desc(`Production Cost`)) %>%
+    slice_head(n=5) 
+  
+  output$productioncost_table <- function()({  
+    top_prodcost_db %>% kable("html", align = 'c', col.names = c("Year", "Average Units Sold")) %>% kable_styling(c("striped", "hover"), full_width = T, position = "center")
+  })
+  
+  
 }
-
-
-##########################################
-####   Shiny UI                       ####
-##########################################
-ui = fluidPage(
-  h1("Video Game Industry Dashboard"),
-  
-  #add drop down section to select metric for units sold
-  selectInput(inputId = "units_sold", 
-              label = "Units Sold", 
-              list("Total", "Average")),
-  textOutput("selected_unitssold"),
-  plotOutput("plot"),
-  
-  #add drop down section to select metric for production cost
-  selectInput(inputId = "production_cost", 
-              label = "Production Cost", 
-              list("Total", "Average")),
-  textOutput("selected_productioncost"),
-  plotOutput("productioncost_total_plot"),
-  
-)
 
 
 #launch the app
