@@ -1,4 +1,4 @@
-remove(list = ls())
+#remove(list = ls())
 
 #libraries
 library(readxl)
@@ -7,11 +7,11 @@ library(dplyr)
 library(kableExtra)
 library(tidyr)
 
-setwd('/Users/rachel/Documents/GitHub/VideoGame-Dashboard-Repo')
-getwd()
+#setwd('/Users/rachel/Documents/GitHub/VideoGame-Dashboard-Repo')
+#getwd()
 
 #read in data
-videogamesales_db <- read_excel("video_game_sales_cleaned.xlsx")
+#videogamesales_db <- read_excel("video_game_sales_cleaned.xlsx")
 
 
 #################################
@@ -57,35 +57,6 @@ top_sales_db %>%
   kable_styling(c("striped", "hover"), full_width = T, position = "center")
 
 
-
-#total production costs plot
-summary_productioncost_db <- videogamesales_db %>%
-  group_by(release_year) %>%
-  summarise(sum_productioncost = sum(`Production Cost`))
-
-ggplot(summary_productioncost_db)  + 
-  geom_line(aes(x=release_year, y=sum_productioncost)) +
-  labs(title= "Total Production Cost per Year", x="Year",y="Millions of Dollars")
-
-
-##total production cost table 
-top_prodcost_db <- summary_productioncost_db %>%
-  rename(`Production Cost` = sum_productioncost,
-         Year = release_year) %>%
-  arrange(desc(`Production Cost`)) %>%
-  slice_head(n=5) 
-
-top_prodcost_db %>%
-  kable("html",
-        align = 'c',
-        col.names = c("Year", 
-                      "Total Production Cost (in millions)")) %>%
-  kable_styling(c("striped", "hover"), full_width = T, position = "center")
-
-
-
-
-##AVERAGES
 #average units sold plot
 summary_avgsales_db <- videogamesales_db %>%
   group_by(release_year) %>%
@@ -123,6 +94,44 @@ top_avg_sales_db %>%
         col.names = c("Year", 
                       "Avg Units Sold", 
                       "Region")) %>%
+  kable_styling(c("striped", "hover"), full_width = T, position = "center")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###PRODUCTION
+#total production costs plot
+summary_productioncost_db <- videogamesales_db %>%
+  group_by(release_year) %>%
+  summarise(sum_productioncost = sum(`Production Cost`))
+
+ggplot(summary_productioncost_db)  + 
+  geom_line(aes(x=release_year, y=sum_productioncost)) +
+  labs(title= "Total Production Cost per Year", x="Year",y="Millions of Dollars")
+
+
+##total production cost table 
+top_prodcost_db <- summary_productioncost_db %>%
+  rename(`Production Cost` = sum_productioncost,
+         Year = release_year) %>%
+  arrange(desc(`Production Cost`)) %>%
+  slice_head(n=5) 
+
+top_prodcost_db %>%
+  kable("html",
+        align = 'c',
+        col.names = c("Year", 
+                      "Total Production Cost (in millions)")) %>%
   kable_styling(c("striped", "hover"), full_width = T, position = "center")
 
 
