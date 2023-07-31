@@ -102,6 +102,11 @@ ui = navbarPage(
               selectInput(inputId = "production_cost", 
                             label = "Select Metric", 
                             list("Total", "Average")),
+              sliderInput("ProductionCosts_YearRange",
+                          label = "Year Range",
+                          min = 2000,
+                          max = 2020,
+                          value = c(2000,2020)),
                 br(),
               ), #end of sidebarPanel
               
@@ -210,7 +215,7 @@ server = function(input, output, session) {
   output$units_sold_instructions <- renderText({paste("To view results of the number of game units old, please select a metric from the drop-down menu. The range of years populated in the graph can be adjusted through the slider.")})
   
   output$production_cost_title <- renderText("Production Cost")
-  output$production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu.")})
+  output$production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu. Use the slider below to increase or decrease the range of years populated in the graph.")})
   
   #data
   summary_sales_db <- videogamesales_db %>%
@@ -299,10 +304,10 @@ server = function(input, output, session) {
     productioncost_datasetInput <- reactive({
       req(input$production_cost)
       if (input$production_cost == "Total"){
-        productioncost_dataset <- total_productioncost_db
+        productioncost_dataset <- total_productioncost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2])
       }
       else if (input$production_cost == "Average"){
-        productioncost_dataset <- avg_productioncost_db
+        productioncost_dataset <- avg_productioncost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2])
       }
       return(productioncost_dataset)
     }) 
