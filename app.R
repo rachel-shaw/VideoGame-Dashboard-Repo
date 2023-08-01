@@ -5,9 +5,13 @@
 #libraries
 library(shiny)
 library(ggplot2)
+library(tidyverse)
 library(dplyr)
 library(knitr)
 library(shinythemes)
+library(kableExtra)
+library(readxl)
+
 
 setwd('/Users/rachel/Documents/GitHub/VideoGame-Dashboard-Repo')
 
@@ -86,6 +90,7 @@ ui = navbarPage(
                 tags$br(),
                 fluidRow(
                   column(8, plotOutput("units_sold_plot")),
+                  h4(htmlOutput("units_sold_table_title"), align = "center"),
                   column(4, tableOutput("units_sold_table")))
                 )
               ), #end of sidebar layout
@@ -113,6 +118,7 @@ ui = navbarPage(
               mainPanel(
                 fluidRow(
                   column(8, plotOutput("productioncost_plot")),
+                  h4(htmlOutput("production_cost_table_title"), align = "center"),
                   column(4, tableOutput("productioncost_table"))),
                 
                 tags$br(),
@@ -122,7 +128,7 @@ ui = navbarPage(
               tags$hr(),
           
           column(12, align = "center", 
-              textOutput("tabs_above_instructions")),
+              h4(htmlOutput("tabs_above_instructions"))),
               
               tags$br(),
               tags$br(),
@@ -204,18 +210,22 @@ server = function(input, output, session) {
   })
   
   output$welcome_details <- renderUI({
-    HTML(paste("This summary page provides an overview of video game sales and production costs from 2000 to 2020. If you'd like an in-depth analysis, use the tabs above to view game sales by platform and genre.", "Happy analyzing!", sep = "<br>"))
+    HTML(paste("This", "<b>", "summary", "</b>", "page provides an overview of video game sales and production costs from 2000 to 2020. If you'd like an in-depth analysis, use the tabs above to view game sales by", "<b>", "platform", "</b>", "and", "<b>", "genre.", "</b>", "<br>", "Happy analyzing!"))
   })
   
-  output$tabs_above_instructions <- renderText({
-      paste("Interested in learning more about how this dashboard was created? Use the `Documentation` and `About` tabs at the top of the page to view the code used in RShiny and learn about the analyst.")
+  output$tabs_above_instructions <- renderUI({
+      HTML(paste("Interested in learning more about how this dashboard was created? Use the", "<b>", "Documentation", "</b>", "and", "<b>", "About", "</b>", "tabs at the top of the page to view the code used in RShiny and learn about the analyst."))
     })
 
   output$units_sold_title <- renderText("Number of Units Sold")
   output$units_sold_instructions <- renderText({paste("To view results of the number of game units old, please select a metric from the drop-down menu. The range of years populated in the graph can be adjusted through the slider.")})
+  output$units_sold_table_title <- renderUI({
+    HTML(paste("<strong>Highest Years by Sales Volume:<br>", input$UnitsSold_YearRange[1], "to", input$UnitsSold_YearRange[2], "</strong>"))})
   
   output$production_cost_title <- renderText("Production Cost")
   output$production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu. Use the slider below to increase or decrease the range of years populated in the graph.")})
+  output$production_cost_table_title <- renderUI({
+    HTML(paste("<strong>Highest Years by Production Cost: <br>", input$ProductionCosts_YearRange[1], "to", input$ProductionCosts_YearRange[2], "</strong>"))})
   
   #data
   summary_sales_db <- videogamesales_db %>%
@@ -236,7 +246,8 @@ server = function(input, output, session) {
               Europe = mean(european_sales),
               Japan = mean(japan_sales)) %>%
     pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
-                 names_to = "Region", values_to = "Average Sales")
+                 names_to = "Region", values_to = "Average Sales") %>%
+    mutate(`Average Sales` = as.double(formatC(as.double(as.character(round(`Average Sales`, 2))), digits = 2, format = "f")))
   
   units_sales_db <- summary_sales_db %>%
     full_join(summary_avgsales_db, by = join_by(release_year, Region)) %>%
@@ -264,7 +275,7 @@ server = function(input, output, session) {
            color = "Regions") +
       ggtitle(paste(input$units_sold, "Video Game Units Sold Across Regions")) +
       theme_bw() + 
-      theme(plot.title = element_text(size=16, face="bold", hjust = 0.5),
+      theme(plot.title = element_text(size=19, face="bold", hjust = 0.5),
             legend.position = "right",
             axis.title.x = element_text(size = 14, vjust = 1.3),
             axis.title.y = element_text(size = 14, vjust = 1.3),
@@ -272,14 +283,47 @@ server = function(input, output, session) {
   })
   
   #table
-  top_sales_db <- summary_sales_db %>%
+  total_top_sales_db <- videogamesales_db %>%
+    group_by(release_year) %>%
+    summarise(Global = sum(global_sales),
+              Asia = sum(asia_sales),
+              `North America` = sum(north_american_sales),
+              Europe = sum(european_sales),
+              Japan = sum(japan_sales)) %>%
+    pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+                 names_to = "Region", values_to = "Sales") %>%
     filter(!Region == "Global") %>%
-    relocate(`Total Sales`, .before = Region) %>%
-    arrange(desc(`Total Sales`)) %>%
-    slice_head(n=5) 
-
+    relocate(`Sales`, .before = Region) 
+  
+  avg_top_sales_db <- videogamesales_db %>%
+    group_by(release_year) %>%
+    summarize(Global = mean(global_sales),
+              Asia = mean(asia_sales),
+              `North America` = mean(north_american_sales),
+              Europe = mean(european_sales),
+              Japan = mean(japan_sales)) %>%
+    pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+                 names_to = "Region", values_to = "Sales") %>%
+    filter(!Region == "Global") %>%
+    relocate(`Sales`, .before = Region) %>%
+    mutate(`Sales` = as.double(formatC(as.double(as.character(round(`Sales`, 2))), digits = 2, format = "f")))
+  
+  #return correct dataset based on selection
+  unitssold_datasetInput_table <- reactive({
+    req(input$units_sold)
+    if (input$units_sold == "Total"){
+      unitssold_table_dataset <- total_top_sales_db %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% arrange(desc(`Sales`)) %>% slice_head(n=5) 
+    }
+    else if (input$units_sold == "Average"){
+      unitssold_table_dataset <- avg_top_sales_db %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% arrange(desc(`Sales`)) %>% slice_head(n=5) 
+    }
+    return(unitssold_table_dataset)
+  }) 
+  
   output$units_sold_table <- function()({  
-   top_sales_db %>% kable("html", align = 'c', col.names = c("Year", "Total Units Sold", "Region")) %>% kable_styling(c("striped", "hover"), full_width = T, position = "center")
+    unitssold_datasetInput_table() %>% 
+      kable(format ="html", align = 'c', col.names = c("Year", paste(input$units_sold, "Units Sold"), "Region")) %>% 
+      kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") 
 })
   
   
@@ -294,11 +338,13 @@ server = function(input, output, session) {
   #data
     total_productioncost_db <- videogamesales_db %>%
       group_by(release_year) %>%
-      summarise(productioncost = sum(`Production Cost`))
+      summarise(`Production Cost` = sum(`Production Cost`))
   
     avg_productioncost_db <- videogamesales_db %>%
       group_by(release_year) %>%
-      summarise(productioncost = mean(`Production Cost`))
+      summarise(`Production Cost` = mean(`Production Cost`)) %>%
+      mutate(`Production Cost` = as.double(formatC(as.double(as.character(round(`Production Cost`, 2))), digits = 2, format = "f")))
+    
     
     #return correct dataset based on selection
     productioncost_datasetInput <- reactive({
@@ -315,30 +361,60 @@ server = function(input, output, session) {
 
   #plot production costs total
   output$productioncost_plot <- renderPlot({
-    g <- ggplot(productioncost_datasetInput(), aes(x=release_year, y=productioncost))
+    g <- ggplot(productioncost_datasetInput(), aes(x=release_year, y=`Production Cost`))
     g + geom_line() + 
+      ggtitle(paste(input$production_cost, "Production Costs Across Regions")) +
       labs(x="Year",
            y="Millions of Dollars") +
     theme_bw() + 
-      theme(legend.position = "right",
+      theme(plot.title = element_text(size=19, face="bold", hjust = 0.5),
+            legend.position = "right",
             axis.title.x = element_text(size = 14, vjust = 1.3),
             axis.title.y = element_text(size = 14, vjust = 1.3),
             axis.text = element_text(size = 12))
     })
   
+
   #table
-  top_prodcost_db <- total_productioncost_db %>%
-    rename(`Production Cost` = productioncost,
-           Year = release_year) %>%
-    arrange(desc(`Production Cost`)) %>%
-    slice_head(n=5) 
+  #data
+  table_total_prodcost_db <- videogamesales_db %>%
+    group_by(release_year) %>%
+    summarise(`Production Cost` = sum(`Production Cost`))
+  
+  table_avg_prodcost_db <- videogamesales_db %>%
+    group_by(release_year) %>%
+    summarise(`Production Cost` = mean(`Production Cost`)) %>%
+    mutate(`Production Cost` = as.double(formatC(as.double(as.character(round(`Production Cost`, 2))), digits = 2, format = "f")))
+  
+  
+  
+  #select correct dataset
+  productioncost_datasetInput_table <- reactive({
+    req(input$production_cost)
+    if (input$production_cost == "Total"){
+      productioncost_dataset_table <- table_total_prodcost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
+    }
+    else if (input$production_cost == "Average"){
+      productioncost_dataset_table <- table_avg_prodcost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
+    }
+    return(productioncost_dataset_table)
+  }) 
+  
   
   output$productioncost_table <- function()({  
-    top_prodcost_db %>% kable("html", align = 'c', col.names = c("Year", "Average Units Sold")) %>% kable_styling(c("striped", "hover"), full_width = T, position = "center")
+    productioncost_datasetInput_table() %>% 
+      kable("html", align = 'c', col.names = c("Year", paste(input$production_cost, "Production Cost"))) %>% 
+      kable_styling(c("striped", "hover"), full_width = T, position = "center")
   })
   
-  
+
 }
+
+
+
+
+
+
 
 
 #launch the app
