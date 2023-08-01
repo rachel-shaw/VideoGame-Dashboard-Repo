@@ -28,6 +28,8 @@ videogamesales_db <- videogamesales_db %>%
 ##write clean dataset
 write.xlsx(videogamesales_db, "video_game_sales_cleaned.xlsx")
 
+#save as RDS
+saveRDS(videogamesales_db, file = "video_game_sales_cleaned.rds")
 
 
 

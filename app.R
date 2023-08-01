@@ -11,6 +11,12 @@ library(knitr)
 library(shinythemes)
 library(kableExtra)
 library(readxl)
+library(leaflet)
+library(sf)
+library(sp)
+library(rgdal)
+library(plotly)
+
 
 
 setwd('/Users/rachel/Documents/GitHub/VideoGame-Dashboard-Repo')
@@ -19,9 +25,6 @@ setwd('/Users/rachel/Documents/GitHub/VideoGame-Dashboard-Repo')
 
 #visualize summary tab
 #source("./tab_visuals_summary.R")
-
-
-
 
 ##########################################
 ####   Shiny UI                       ####
@@ -73,6 +76,8 @@ ui = navbarPage(
                 selectInput(inputId = "units_sold",
                             label = "Select Metric",
                             list("Total", "Average")),
+                tags$br(),
+                
                 sliderInput("UnitsSold_YearRange",
                             label = "Year Range",
                             min = 2000,
@@ -84,17 +89,38 @@ ui = navbarPage(
                 tags$br(),
                 tags$br(),
                 tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                
               ),
               
               mainPanel(
                 tags$br(),
                 fluidRow(
-                  column(8, plotOutput("units_sold_plot")),
+                  column(8, plotlyOutput("sales_totalavg_sum_plot")),
                   h4(htmlOutput("units_sold_table_title"), align = "center"),
-                  column(4, tableOutput("units_sold_table")))
-                )
-              ), #end of sidebar layout
+                  column(4, tableOutput("sales_totalavg_sum_table")),
+                  tags$br(),
+                  
+                  column(12, leafletOutput("map")),
+                  )
+                ),
               
+              ), #end of sidebar layout
+             
               tags$hr(),
           
           ##PRODUCTION COST PANEL    
@@ -117,7 +143,7 @@ ui = navbarPage(
               
               mainPanel(
                 fluidRow(
-                  column(8, plotOutput("productioncost_plot")),
+                  column(8, plotlyOutput("productioncost_plot")),
                   h4(htmlOutput("production_cost_table_title"), align = "center"),
                   column(4, tableOutput("productioncost_table"))),
                 
@@ -142,10 +168,106 @@ ui = navbarPage(
     ##########################################
     tabPanel(
       "Platform",
+      
+      fluidPage(
         
-    ),
-      
-      
+        fluidRow(
+          
+          ##UNITS SOLD PANEL
+           sidebarLayout(
+            sidebarPanel(
+              #add drop down section to select metric for units sold
+              h3(textOutput("platform_units_sold_title")),
+              textOutput("platform_units_sold_instructions"),
+              tags$br(),
+              
+              selectInput(inputId = "platform_units_sold",
+                          label = "Select Metric",
+                          list("Total", "Average")),
+              tags$br(),
+              
+              sliderInput("platform_UnitsSold_YearRange",
+                          label = "Year Range",
+                          min = 2000,
+                          max = 2020,
+                          value = c(2000,2020)),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              tags$br(),
+              
+            ),
+            
+            mainPanel(
+              tags$br(),
+              fluidRow(
+                column(8, plotlyOutput("platform_sales_totalavg_sum_plot")),
+                h4(htmlOutput("platform_units_sold_table_title"), align = "center"),
+                column(4, tableOutput("platform_sales_totalavg_sum_table")),
+                tags$br(),
+              )
+            ),
+            
+          ), #end of sidebar layout
+          
+          tags$hr(),
+          
+          ##PRODUCTION COST PANEL    
+          sidebarLayout(
+            sidebarPanel(
+              #add drop down section to select metric for production costs
+              h3(textOutput("platform_production_cost_title")),
+              textOutput("platform_production_cost_instructions"),
+              tags$br(),
+              selectInput(inputId = "platform_production_cost", 
+                          label = "Select Metric", 
+                          list("Total", "Average")),
+              sliderInput("platform_ProductionCosts_YearRange",
+                          label = "Year Range",
+                          min = 2000,
+                          max = 2020,
+                          value = c(2000,2020)),
+              br(),
+            ), #end of sidebarPanel
+            
+            mainPanel(
+              fluidRow(
+                column(8, plotlyOutput("platform_productioncost_plot")),
+                h4(htmlOutput("platform_production_cost_table_title"), align = "center"),
+                column(4, tableOutput("platform_productioncost_table"))),
+              
+              tags$br(),
+              tags$br(),)  
+          ),#end of sidebarLayout
+          
+          tags$hr(),
+          
+          
+          ###INSERT NEXT SECTION OF PAGE HERE!!!
+          
+          tags$br(),
+          tags$br(),
+          tags$br(),
+          tags$br()
+        ))),
+  
     ##########################################
     ####  Panel: Genre                    ####
     ##########################################     
@@ -178,7 +300,7 @@ ui = navbarPage(
   # credit banner----
   footer = (div(
     windowTitle = "",
-    img(src = "Dashboard_Credit_Banner.jpg", width = "100%", class = "bg"),
+    img(src = "Dashboard_Credit_Banner_small.jpg", width = "100%", class = "bg"),
   )),
   
   
@@ -201,7 +323,10 @@ ui = navbarPage(
 server = function(input, output, session) {
   
   #import data
-  videogamesales_db <- read_excel("video_game_sales_cleaned.xlsx")
+  #videogamesales_db <- read_excel("video_game_sales_cleaned.xlsx")
+  videogamesales_db <- readRDS("video_game_sales_cleaned.rds")
+  tail(videogamesales_db)
+  dim(videogamesales_db)
   
   ##UNITS SOLD SECTION
   #output text for side panel
@@ -218,17 +343,17 @@ server = function(input, output, session) {
     })
 
   output$units_sold_title <- renderText("Number of Units Sold")
-  output$units_sold_instructions <- renderText({paste("To view results of the number of game units old, please select a metric from the drop-down menu. The range of years populated in the graph can be adjusted through the slider.")})
+  output$units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu. The range of years populated can be adjusted through the slider.")})
   output$units_sold_table_title <- renderUI({
     HTML(paste("<strong>Highest Years by Sales Volume:<br>", input$UnitsSold_YearRange[1], "to", input$UnitsSold_YearRange[2], "</strong>"))})
   
   output$production_cost_title <- renderText("Production Cost")
-  output$production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu. Use the slider below to increase or decrease the range of years populated in the graph.")})
+  output$production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu. Use the slider below to increase or decrease the range of years populated.")})
   output$production_cost_table_title <- renderUI({
     HTML(paste("<strong>Highest Years by Production Cost: <br>", input$ProductionCosts_YearRange[1], "to", input$ProductionCosts_YearRange[2], "</strong>"))})
   
   #data
-  summary_sales_db <- videogamesales_db %>%
+  sales_total_db <- videogamesales_db %>%
     group_by(release_year) %>%
     summarise(Global = sum(global_sales),
               Asia = sum(asia_sales),
@@ -238,7 +363,7 @@ server = function(input, output, session) {
     pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
                  names_to = "Region", values_to = "Total Sales")
   
-  summary_avgsales_db <- videogamesales_db %>%
+  sales_average_db <- videogamesales_db %>%
     group_by(release_year) %>%
     summarize(Global = mean(global_sales),
               Asia = mean(asia_sales),
@@ -249,8 +374,8 @@ server = function(input, output, session) {
                  names_to = "Region", values_to = "Average Sales") %>%
     mutate(`Average Sales` = as.double(formatC(as.double(as.character(round(`Average Sales`, 2))), digits = 2, format = "f")))
   
-  units_sales_db <- summary_sales_db %>%
-    full_join(summary_avgsales_db, by = join_by(release_year, Region)) %>%
+  sales_totalavg_sum_db <- sales_total_db %>%
+    full_join(sales_average_db, by = join_by(release_year, Region)) %>%
     rename(`Total` = `Total Sales`,
            `Average` = `Average Sales`) %>%
     pivot_longer(cols = c(`Total`, `Average`),
@@ -260,30 +385,36 @@ server = function(input, output, session) {
       #return correct dataset based on selection
       unitssold_datasetInput <- reactive({
         req(input$units_sold)
-        df <- units_sales_db %>% filter(Metric %in% input$units_sold) %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2])
+        df <- sales_totalavg_sum_db %>% filter(Metric %in% input$units_sold) %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2])
       }) 
       
   #plot
-  output$units_sold_plot <- renderPlot({
+  output$sales_totalavg_sum_plot <- renderPlotly({
     g <- ggplot(unitssold_datasetInput(), 
                 aes(y = Sales, 
                     x = release_year, 
-                    color= factor(Region))) 
-    g + geom_line(size = 1) + 
+                    color= factor(Region),
+                    group = factor(Region),
+                    text = paste("Region: ", Region,
+                                 "<br>Year: ", release_year,
+                                 "<br>", input$units_sold, "Sales: ", round(`Sales`, digits = 2)))) + 
+      geom_line(size = .8) + 
       labs(x="Year",
            y="Millions of Copies Sold",
            color = "Regions") +
       ggtitle(paste(input$units_sold, "Video Game Units Sold Across Regions")) +
       theme_bw() + 
-      theme(plot.title = element_text(size=19, face="bold", hjust = 0.5),
+      theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
             legend.position = "right",
-            axis.title.x = element_text(size = 14, vjust = 1.3),
-            axis.title.y = element_text(size = 14, vjust = 1.3),
-            axis.text = element_text(size = 12))
+            axis.title.x = element_text(size = 10, vjust = 1.3),
+            axis.title.y = element_text(size = 10, vjust = 1.3),
+            axis.text = element_text(size = 9))
+    ggplotly(g, tooltip = "text")
   })
   
+  
   #table
-  total_top_sales_db <- videogamesales_db %>%
+  sales_TOP_total_db <- videogamesales_db %>%
     group_by(release_year) %>%
     summarise(Global = sum(global_sales),
               Asia = sum(asia_sales),
@@ -295,7 +426,7 @@ server = function(input, output, session) {
     filter(!Region == "Global") %>%
     relocate(`Sales`, .before = Region) 
   
-  avg_top_sales_db <- videogamesales_db %>%
+  sales_TOP_average_db <- videogamesales_db %>%
     group_by(release_year) %>%
     summarize(Global = mean(global_sales),
               Asia = mean(asia_sales),
@@ -312,18 +443,20 @@ server = function(input, output, session) {
   unitssold_datasetInput_table <- reactive({
     req(input$units_sold)
     if (input$units_sold == "Total"){
-      unitssold_table_dataset <- total_top_sales_db %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% arrange(desc(`Sales`)) %>% slice_head(n=5) 
+      sales_totalavg_sum_table_df <- sales_TOP_total_db %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% arrange(desc(`Sales`)) %>% slice_head(n=5) 
     }
     else if (input$units_sold == "Average"){
-      unitssold_table_dataset <- avg_top_sales_db %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% arrange(desc(`Sales`)) %>% slice_head(n=5) 
+      sales_totalavg_sum_table_df <- sales_TOP_average_db %>% filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% arrange(desc(`Sales`)) %>% slice_head(n=5) 
     }
-    return(unitssold_table_dataset)
+    return(sales_totalavg_sum_table_df)
   }) 
   
-  output$units_sold_table <- function()({  
+  output$sales_totalavg_sum_table <- function()({  
     unitssold_datasetInput_table() %>% 
-      kable(format ="html", align = 'c', col.names = c("Year", paste(input$units_sold, "Units Sold"), "Region")) %>% 
-      kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") 
+      kable(format ="html", align = 'c', col.names = c("Year", paste(input$units_sold, "Units Sold*"), "Region")) %>% 
+      kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") %>%
+      add_footnote(("in millions of copies"), notation = "symbol")
+    
 })
   
   
@@ -360,20 +493,25 @@ server = function(input, output, session) {
 
 
   #plot production costs total
-  output$productioncost_plot <- renderPlot({
-    g <- ggplot(productioncost_datasetInput(), aes(x=release_year, y=`Production Cost`))
-    g + geom_line() + 
+  output$productioncost_plot <- renderPlotly({
+    g <- ggplot(productioncost_datasetInput(), 
+                aes(x=release_year, 
+                    y=`Production Cost`, 
+                    group = 1,
+                    text = paste("Year: ", release_year,
+                             "<br>", input$production_cost, "Production Cost: ", round(`Production Cost`, digits = 2)))) + 
+      geom_line() + 
       ggtitle(paste(input$production_cost, "Production Costs Across Regions")) +
       labs(x="Year",
            y="Millions of Dollars") +
     theme_bw() + 
-      theme(plot.title = element_text(size=19, face="bold", hjust = 0.5),
+      theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
             legend.position = "right",
-            axis.title.x = element_text(size = 14, vjust = 1.3),
-            axis.title.y = element_text(size = 14, vjust = 1.3),
-            axis.text = element_text(size = 12))
+            axis.title.x = element_text(size = 10, vjust = 1.3),
+            axis.title.y = element_text(size = 10, vjust = 1.3),
+            axis.text = element_text(size = 9))
+    ggplotly(g, tooltip = "text")
     })
-  
 
   #table
   #data
@@ -403,18 +541,106 @@ server = function(input, output, session) {
   
   output$productioncost_table <- function()({  
     productioncost_datasetInput_table() %>% 
-      kable("html", align = 'c', col.names = c("Year", paste(input$production_cost, "Production Cost"))) %>% 
-      kable_styling(c("striped", "hover"), full_width = T, position = "center")
+      kable("html", align = 'c', col.names = c("Year", paste(input$production_cost, "Production Cost*"))) %>% 
+      kable_styling(c("striped", "hover"), full_width = T, position = "center") %>%
+      add_footnote(("in millions of dollars"), notation = "symbol")
+    
   })
   
 
+  #add map
+  region_map <- sf::st_read("shapefiles/Merged_Shapes/Merged_Shapes2.shp", stringsAsFactors = F) %>%
+  st_transform() %>%
+    st_zm() %>%
+    as("Spatial")
+  
+  region_map@data <- region_map@data %>%
+    mutate(Region = CONTINENT) %>%
+    select(-CONTINENT) %>%
+    relocate(Region, .after = FID) 
+  
+  #Make a static map
+  WorldMap <- leaflet(data= region_map, options = leafletOptions(center = c(90,90), minZoom = 1.4)) %>%
+    addProviderTiles(providers$CartoDB.PositronNoLabels, options = providerTileOptions(noWrap = TRUE)) %>%
+    fitBounds(lng1 = 0, lat1 = 90,
+              lng2 = 0, lat2 = -50) #%>%
+    #setMaxBounds(lng1 = -180, lat1 = 85.0511,
+                  #lng2 = 180, lat2 = -85.0511)
+
+  # WorldMap = leaflet(region_map,
+  #                    width = 1040, ## default setting for nice visuals
+  #                    height = 800,
+  #                    ## the options below define the initial coordinates (center)
+  #                    ##, the initial zoom (x2) and the bounds of the map
+  #                    options = leafletOptions(center = c(30,0),
+  #                                             zoom=2,
+  #                                             maxBounds = list(c(-90, -180),
+  #                                                              c(90,180))))  %>% 
+  #                   addTiles() 
+    
+  output$map <- renderLeaflet({WorldMap})
+
+  ##data for map
+  map_datasetInput <- reactive({
+    req(input$units_sold)
+    if (input$units_sold == "Total"){
+      map_df <- sales_total_db %>% 
+        rename(Total = `Total Sales`) %>%
+        filter(!Region == "Global") %>%
+        filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% 
+        group_by(Region) %>%
+        summarize(Total = sum(Total)) %>%
+        mutate(Percent = (Total/sum(Total))*100)}
+    else if (input$units_sold == "Average"){
+      map_df <- sales_total_db %>% 
+        rename(Total = `Total Sales`) %>%
+        filter(!Region == "Global") %>%
+        filter(release_year >= input$UnitsSold_YearRange[1] & release_year <= input$UnitsSold_YearRange[2]) %>% 
+        group_by(Region) %>%
+        summarize(Total = mean(Total)) %>%
+        mutate(Percent = (Total/sum(Total))*100)}
+    return(map_df)
+  }) 
+  
+  
+  observe({
+    req(input$units_sold)
+    req(input$UnitsSold_YearRange)
+    
+    region_map@data <- region_map@data %>%
+      full_join(map_datasetInput(),by="Region") %>%
+      mutate(label = paste0("<strong>",Region,"</strong>","<br/>",
+                            input$units_sold, " Sales in Year Range: ", round(Total,digits = 2),
+                            "<br/>", 
+                            "Percent of Global Sales: ", round(Percent,digits = 2), "%"))
+    
+    #define colors for heatmap
+    #bins <- c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, Inf)
+    #pal <- colorBin("YlOrRd", domain = map_datasetInput()$Percent, bins = bins)
+    
+    pal <- colorNumeric(
+      palette = "RdYlBu",reverse = TRUE,
+      domain = map_datasetInput()$Percent)
+    
+    data <- region_map
+    
+      leafletProxy("map",data= data) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      clearShapes() %>%
+      clearControls() %>%
+      addPolygons(data=data,
+                  popup = ~label,
+                  color = "black",
+                  weight = 1,
+                  fillColor = ~pal(Percent),
+                  fillOpacity = 0.7,
+                  layerId = ~Region) %>%
+        addLegend("bottomright", pal = pal, map_datasetInput()$Percent,
+                  title = "Percent",
+                  labFormat = labelFormat(suffix = "%"),
+                  opacity = 1)
+  })
 }
-
-
-
-
-
-
 
 
 #launch the app
