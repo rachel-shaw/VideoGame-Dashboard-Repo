@@ -195,34 +195,28 @@ ui = navbarPage(
                           label = "Select Metric",
                           list("Total", "Average")),
               tags$br(),
-
+              
+              radioButtons("platform_region_radio",
+                           label = "Select Region",
+                           choices = list(
+                             "Global" = "Global",
+                             "North America" = "North America",
+                             "Europe" = "Europe",
+                             "Japan" = "Japan",
+                             "Asia" = "Asia"),
+                           selected = "Global",
+                           inline=TRUE),
+              
+              tags$br(),
+              
               sliderInput("platform_UnitsSold_YearRange",
                           label = "Year Range",
                           min = 2000,
                           max = 2020,
-                          value = c(2000,2020)),
+                          value = c(2000,2020)),             
+              
               tags$br(),
               tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-              tags$br(),
-
             ),
 
             mainPanel(
@@ -271,8 +265,58 @@ ui = navbarPage(
 
           tags$hr(),
 
+          ##########################################
+          ####  Platform: Units per Region      ####
+          ##########################################
+          
+          sidebarLayout(
+            sidebarPanel(
+              #add drop down section to select metric for production costs
+              h3(textOutput("platform_unitsperregion_title")),
+              textOutput("platform_unitsperregiont_instructions"),
+              
+              tags$br(),
+              
+              selectInput(inputId = "platform_unitsperregion",
+                          label = "Select Metric",
+                          list("Total", "Average")),
+              
+              tags$br(),
+      
+              radioButtons("platform_unitsperregion_radio",
+                           label = "Select Region",
+                           choices = list(
+                             "Global" = "Global",
+                             "North America" = "North America",
+                             "Europe" = "Europe",
+                             "Japan" = "Japan",
+                             "Asia" = "Asia"),
+                           selected = "Global",
+                           inline=TRUE),
 
-          ###INSERT NEXT SECTION OF PAGE HERE!!!
+              br(),
+            ), #end of sidebarPanel
+            
+            mainPanel(
+              fluidRow(
+                column(8, plotlyOutput("platform_unitsperregion_plot")),
+                h4(htmlOutput("platform_unitsperregion_table_title"), align = "center"),
+                column(4, tableOutput("platform_unitsperregion_table"))),
+              
+              tags$br(),
+              tags$br(),)
+          ),#end of sidebarLayout
+          
+          
+          
+          
+          tags$hr(),
+          
+          
+          ##########################################
+          ####  Platform: Titles per Year       ####
+          ##########################################  
+          
 
           tags$br(),
           tags$br(),
