@@ -39,12 +39,12 @@ server = function(input, output, session) {
   })
   
   output$units_sold_title <- renderText("Number of Units Sold")
-  output$units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu. The range of years populated can be adjusted through the slider. On the graph, double-click on the legend to isolate regions.")})
+  output$units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu. The range of years populated can be adjusted through the slider. On the graph, double-click on the legend to isolate regions. Select regions in the map to view the summary of units sold for the year range specified.")})
   output$units_sold_table_title <- renderUI({
     HTML(paste("<strong>Highest Years by Sales Volume:<br>", input$UnitsSold_YearRange[1], "to", input$UnitsSold_YearRange[2], "</strong>"))})
   
   output$production_cost_title <- renderText("Production Cost")
-  output$production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu. Use the slider below to increase or decrease the range of years populated.")})
+  output$production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu. Use the slider below to adjust the range of years populated.")})
   output$production_cost_table_title <- renderUI({
     HTML(paste("<strong>Highest Years by Production Cost: <br>", input$ProductionCosts_YearRange[1], "to", input$ProductionCosts_YearRange[2], "</strong>"))})
   
@@ -95,7 +95,7 @@ server = function(input, output, session) {
                     group = factor(Region),
                     text = paste("Region: ", Region,
                                  "<br>Year: ", release_year,
-                                 "<br>", input$units_sold, "Sales: ", round(`Sales`, digits = 2)))) + 
+                                 "<br>", input$units_sold, "Units Sold: ", round(`Sales`, digits = 2)))) + 
       geom_line(size = .8) + 
       geom_point() +
       labs(x="Year",
@@ -208,7 +208,7 @@ server = function(input, output, session) {
     region_map@data <- region_map@data %>%
       full_join(map_datasetInput(),by="Region") %>%
       mutate(label = paste0("<strong>",Region,"</strong>","<br/>",
-                            input$units_sold, " Sales in Year Range: ", round(Total,digits = 2),
+                            input$units_sold, " Units Sold in Year Range: ", round(Total,digits = 2),
                             "<br/>", 
                             "Percent of Global Sales: ", round(Percent,digits = 2), "%"))
     
@@ -310,12 +310,12 @@ server = function(input, output, session) {
   productioncost_datasetInput_table <- reactive({
     req(input$production_cost)
     if (input$production_cost == "Total"){
-      productioncost_dataset_table <- table_total_prodcost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
+      productioncost_dataset_table_df <- table_total_prodcost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
     }
     else if (input$production_cost == "Average"){
-      productioncost_dataset_table <- table_avg_prodcost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
+      productioncost_dataset_table_df <- table_avg_prodcost_db %>% filter(release_year >= input$ProductionCosts_YearRange[1] & release_year <= input$ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
     }
-    return(productioncost_dataset_table)
+    return(productioncost_dataset_table_df)
   }) 
   
   
@@ -441,49 +441,42 @@ platform_sales_TOP_average_db <- videogamesales_db %>%
 
 #return correct dataset based on selection
 platform_unitssold_datasetInput_table <- reactive({
-  req(input$platform_units_sold)
+  req(input$platform_units_sold) 
   if (input$platform_units_sold == "Total"){
-    platform_sales_totalavg_sum_table_df <- platform_sales_TOP_total_db %>% 
+    platform_sales_table_df <- platform_sales_TOP_total_db %>% 
       ungroup() %>%
       filter(Region == input$platform_region_radio) %>%
+      select(-Region) %>%
       filter(release_year >= input$platform_UnitsSold_YearRange[1] & release_year <= input$platform_UnitsSold_YearRange[2]) %>% 
       arrange(desc(`Sales`)) %>% 
       slice_head(n=5) %>%
-      select(-Region) %>%
-      relocate(platform, .after = Sales)
-  }
-  else if (input$units_sold == "Average"){
-    platform_sales_totalavg_sum_table_df <- platform_sales_TOP_average_db %>% 
-      ungroup() %>%
-      filter(Region == input$platform_region_radio) %>%
-      filter(release_year >= input$platform_UnitsSold_YearRange[1] & release_year <= input$platform_UnitsSold_YearRange[2]) %>% 
-      arrange(desc(`Sales`)) %>% 
-      slice_head(n=5) %>%
-      select(-Region) %>%
       relocate(platform, .after = Sales)
     
   }
-  return(platform_sales_totalavg_sum_table_df)
+  else if (input$platform_units_sold == "Average"){
+    platform_sales_table_df <- platform_sales_TOP_average_db %>% 
+      ungroup() %>%
+      filter(Region == input$platform_region_radio) %>%
+      select(-Region) %>%
+      filter(release_year >= input$platform_UnitsSold_YearRange[1] & release_year <= input$platform_UnitsSold_YearRange[2]) %>% 
+      arrange(desc(`Sales`)) %>% 
+      slice_head(n=5) %>%
+      relocate(platform, .after = Sales)
+  }
+  return(platform_sales_table_df)
 }) 
 
-output$platform_sales_totalavg_sum_table <- function()({  
+output$platform_sales_table <- function()({  
   platform_unitssold_datasetInput_table() %>% 
-    kable(format ="html", align = 'c', col.names = c("Year", paste(input$platform_units_sold, "Units Sold*"), "Platform")) %>% 
+    kable(format ="html", align = 'c', col.names = c("Year", paste(input$units_sold, "Units Sold*"), "Region")) %>% 
     kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") %>%
     add_footnote(("in millions of copies"), notation = "symbol")
   
 })
 
-
 ##########################################
 ####  Platform: Production Costs      ####
 ##########################################
-
-
-#output text for selected production cost metric
-#output$platform_selected_productioncost <- renderText({
-#  paste("Showing results for", input$platform_production_cost, "Video Game Production Costs")
-#})
 
 #data
 platform_total_productioncost_db <- videogamesales_db %>%
@@ -574,7 +567,7 @@ output$platform_productioncost_table <- function()({
 output$platform_unitsperregion_title <- renderText("Lifetime Units Sold per Region")
 output$platform_unitsperregion_instructions <- renderText({paste("To view data on lifetime units sold per region, please select a metric from the drop-down menu and a region below.")})
 output$platform_unitsperregion_table_title <- renderUI({
-  HTML(paste("<strong>Highest Lifetime Units Sold by Platform: <br>", input$platform_unitsperregion_YearRange[1], "to", input$platform_unitsperregion_YearRange[2], "</strong>"))})
+  HTML(paste("<strong>Highest Lifetime Units Sold by Platform</strong>"))})
 
 #data
 platform_total_unitsperregion_db <- videogamesales_db %>%
@@ -627,7 +620,7 @@ output$platform_unitsperregion_plot <- renderPlotly({
     labs(x="Platform",
          y="Number of Games Sold (in millions)",
          color = "platform") +
-    ggtitle(paste(input$platform_units_sold, "Video Game Sales 2000-2020 Globally")) +
+    ggtitle(paste(input$platform_units_sold, "Video Game Sales 2000-2020")) +
     theme_bw() + 
     theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
           legend.position = "right",
@@ -637,31 +630,618 @@ output$platform_unitsperregion_plot <- renderPlotly({
   ggplotly(g, tooltip = "text")
 }) 
 
-##########################################
-####  Platform: Titles per Year       ####
-##########################################  
+
+
+#table
+platform_unitsperregion_TOP_total_db <- videogamesales_db %>%
+  group_by(release_year, platform) %>%
+  summarise(Global = sum(global_sales),
+            Asia = sum(asia_sales),
+            `North America` = sum(north_american_sales),
+            Europe = sum(european_sales),
+            Japan = sum(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  #filter(!Region == "Global") %>%
+  relocate(`Sales`, .before = Region) 
+
+platform_unitsperregion_TOP_average_db <- videogamesales_db %>%
+  group_by(release_year, platform) %>%
+  summarize(Global = mean(global_sales),
+            Asia = mean(asia_sales),
+            `North America` = mean(north_american_sales),
+            Europe = mean(european_sales),
+            Japan = mean(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  #filter(!Region == "Global") %>%
+  relocate(`Sales`, .before = Region) %>%
+  mutate(`Sales` = as.double(formatC(as.double(as.character(round(`Sales`, 2))), digits = 2, format = "f")))
+
+#return correct dataset based on selection
+platform_unitsperregion_datasetInput_table <- reactive({
+  req(input$platform_unitsperregion) 
+  if (input$platform_unitsperregion == "Total"){
+    platform_unitsperregion_table_df <- platform_unitsperregion_TOP_total_db %>% 
+      ungroup() %>%
+      filter(Region == input$platform_unitsperregion_radio) %>%
+      select(-Region) %>%
+      arrange(desc(`Sales`)) %>% 
+      slice_head(n=5) %>%
+      relocate(platform, .after = Sales)
+    
+  }
+  else if (input$platform_unitsperregion == "Average"){
+    platform_unitsperregion_table_df <- platform_unitsperregion_TOP_average_db %>% 
+      ungroup() %>%
+      filter(Region == input$platform_unitsperregion_radio) %>%
+      select(-Region) %>%
+      arrange(desc(`Sales`)) %>% 
+      slice_head(n=5) %>%
+      relocate(platform, .after = Sales)
+  }
+  return(platform_unitsperregion_table_df)
+}) 
+
+output$platform_unitsperregion_table <- function()({  
+  platform_unitsperregion_datasetInput_table() %>% 
+    kable(format ="html", align = 'c', col.names = c("Year", paste(input$platform_unitsperregion, "Units Sold*"), "Platform")
+          ) %>% 
+    kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") %>%
+    add_footnote(("in millions of copies"), notation = "symbol")
+  
+})
 
 
 
-  ##########################################
-  ####  Panel: Genre                    ####
-  ##########################################  
+
+    #####################################################
+    ####  Platform: Titles per Region/Platform       ####
+    #####################################################
+
+
+output$platform_titleyear_title <- renderText("Top Selling Titles")
+output$platform_titleyear_instructions <- renderText({paste("To view popular game titles per region and platform, check the boxes below.")})
+output$platform_titleyear_table_title <- renderUI({
+  HTML(paste("<strong>Top Titles by Platform</strong>"))})
+
+# #data
+# platform_total_titleyear <- videogamesales_db %>%
+#   group_by(release_year, platform, title) %>%
+#   summarize(Global = sum(global_sales),
+#             Asia = sum(asia_sales),
+#             `North America` = sum(north_american_sales),
+#             Europe = sum(european_sales),
+#             Japan = sum(japan_sales)) %>%
+#   pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+#                names_to = "Region", values_to = "n") %>%
+#   count(release_year, platform, Region)
+# 
+# platform_avg_titleyear <- videogamesales_db %>%
+#   group_by(release_year, platform, title) %>%
+#   summarize(Global = mean(global_sales),
+#             Asia = mean(asia_sales),
+#             `North America` = mean(north_american_sales),
+#             Europe = mean(european_sales),
+#             Japan = mean(japan_sales)) %>%
+#   pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+#                names_to = "Region", values_to = "n") %>%
+#   count(release_year, platform, Region) %>%
+#   mutate(`n` = as.double(formatC(as.double(as.character(round(`n`, 2))), digits = 2, format = "f")))
+# 
+# 
+# #select correct dataset
+# platform_titleyear_datasetInput_table <- reactive({
+#   req(input$platform_titleyear)
+#   if (input$platform_titleyear == "Total"){
+#     platform_titleyear_dataset <- platform_total_titleyear %>% 
+#       filter(release_year >= input$platform_titleyear_YearRange[1] & release_year <= input$platform_titleyear_YearRange[2]) %>%
+#       filter(Region %in% input$checkGroup)
+#   }
+#   else if (input$platform_titleyear == "Average"){
+#     platform_titleyear_dataset <- platform_avg_titleyear %>% 
+#       filter(release_year >= input$platform_titleyear_YearRange[1] & release_year <= input$platform_titleyear_YearRange[2]) %>%
+#       filter(Region %in% input$checkGroup)
+#   }
+#   return(platform_titleyear_dataset)
+# }) 
+# 
+# 
+# ##plot
+# output$platform_titleyear_plot <- renderPlotly({
+#   g <- ggplot(platform_titleyear_datasetInput_table(),
+#               aes(y = n, 
+#                   x = release_year, 
+#                   fill = platform,
+#                   group = platform,
+#                   text = paste("Platform: ", platform,
+#                                "<br>Region: ", Region,
+#                                "<br>", "Number of Titles Released: ", round(`n`, digit = 0)))) +
+#     geom_bar(stat='identity') +
+#     labs(x="Year",
+#          y="Number of Titles Released",
+#          color = "platform") +
+#     ggtitle(paste(input$platform_titleyear, "Number of Titles Released per Year")) +
+#     theme_bw() + 
+#     theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
+#           legend.position = "right",
+#           axis.title.x = element_text(size = 10, vjust = 1.3),
+#           axis.title.y = element_text(size = 10, vjust = 1.3),
+#           axis.text = element_text(size = 9))
+#   ggplotly(g, tooltip = "text")
+# }) 
+
+
+
+#table
+platform_titleyear_table_df <- videogamesales_db %>%
+  group_by(platform, title) %>%
+  summarise(Global = sum(global_sales),
+            Asia = sum(asia_sales),
+            `North America` = sum(north_american_sales),
+            Europe = sum(european_sales),
+            Japan = sum(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  relocate(`Sales`, .before = Region) 
+
+output$platform_titleyear_table <- function()({
+  platform_titleyear_table_df %>%
+    ungroup() %>%
+    filter(Region %in% input$checkGroup) %>%
+    filter(platform %in% input$checkGroup_platform) %>%
+    group_by(title, platform, Region) %>%
+    summarise(Sales = sum(Sales)) %>%
+    arrange(desc(`Sales`)) %>%
+    ungroup() %>%
+    slice_head(n=10) %>%
+    relocate(platform, .after = Sales) %>%
+    relocate(Region, .after = platform) %>%
+    kable(format ="html", align = 'c', col.names = c("Title", "Units Sold*", "Platform", "Region")) %>%
+    kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") %>%
+    add_footnote(("in millions of copies"), notation = "symbol")
+})
+
+
+
+
+
+
+
+                                                            ##########################################
+                                                            ####  Panel: Genre                    ####
+                                                            ##########################################  
 
 ##########################################
 ####     Genre: Units Sold Section    ####
 ##########################################
 
+
+#output text for side panel
+output$genre_units_sold_title <- renderText("Number of Units Sold")
+output$genre_units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu and a region below. The range of years populated can be adjusted through the slider. Double-click on the legend to isolate genres in the graph.")})
+output$genre_units_sold_table_title <- renderUI({
+  HTML(paste("<strong>Highest Years by Sales Volume:<br>", input$genre_UnitsSold_YearRange[1], "to", input$genre_UnitsSold_YearRange[2], "</strong>"))})
+
+output$genre_production_cost_title <- renderText("Production Cost")
+output$genre_production_cost_instructions <- renderText({paste("To view data on production costs each year, please select a metric from the drop-down menu. Use the slider below to increase or decrease the range of years populated.")})
+output$genre_production_cost_table_title <- renderUI({
+  HTML(paste("<strong>Highest Years by Production Cost: <br>", input$genre_ProductionCosts_YearRange[1], "to", input$genre_ProductionCosts_YearRange[2], "</strong>"))})
+
+#data
+genre_sales_total_db <- videogamesales_db %>%
+  group_by(release_year, genre) %>%
+  summarise(Global = sum(global_sales),
+            Asia = sum(asia_sales),
+            `North America` = sum(north_american_sales),
+            Europe = sum(european_sales),
+            Japan = sum(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Total Sales")
+
+genre_sales_average_db <- videogamesales_db %>%
+  group_by(release_year, genre) %>%
+  summarize(Global = mean(global_sales),
+            Asia = mean(asia_sales),
+            `North America` = mean(north_american_sales),
+            Europe = mean(european_sales),
+            Japan = mean(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Average Sales") %>%
+  mutate(`Average Sales` = as.double(formatC(as.double(as.character(round(`Average Sales`, 2))), digits = 2, format = "f")))
+
+genre_sales_totalavg_sum_db <- genre_sales_total_db %>%
+  full_join(genre_sales_average_db, by = join_by(release_year, genre, Region)) %>%
+  rename(`Total` = `Total Sales`,
+         `Average` = `Average Sales`) %>%
+  pivot_longer(cols = c(`Total`, `Average`),
+               names_to = "Metric", values_to = "Sales")
+
+#return correct dataset based on selection
+genre_unitssold_datasetInput <- reactive({
+  req(input$genre_units_sold)
+  df <- genre_sales_totalavg_sum_db %>% 
+    filter(Metric %in% input$genre_units_sold) %>% 
+    filter(Region == input$genre_region_radio) %>%
+    filter(release_year >= input$genre_UnitsSold_YearRange[1] & release_year <= input$genre_UnitsSold_YearRange[2])
+}) 
+
+#plot
+output$genre_sales_totalavg_sum_plot <- renderPlotly({
+  g <- ggplot(genre_unitssold_datasetInput(), 
+              aes(y = Sales, 
+                  x = release_year, 
+                  color= factor(genre),
+                  group = factor(genre),
+                  text = paste("Genre: ", genre,
+                               "<br>Year: ", release_year,
+                               "<br>", input$genre_units_sold, "Sales: ", round(`Sales`, digits = 2)))) + 
+    geom_line(size = .8) + 
+    geom_point() +
+    labs(x="Year",
+         y="Millions of Copies Sold",
+         color = "genre") +
+    ggtitle(paste(input$genre_units_sold, "Video Game Units Sold Across Genre")) +
+    theme_bw() + 
+    theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
+          legend.position = "right",
+          axis.title.x = element_text(size = 10, vjust = 1.3),
+          axis.title.y = element_text(size = 10, vjust = 1.3),
+          axis.text = element_text(size = 9))
+  ggplotly(g, tooltip = "text")
+}) 
+
+
+#table
+genre_sales_TOP_total_db <- videogamesales_db %>%
+  group_by(release_year, genre) %>%
+  summarise(Global = sum(global_sales),
+            Asia = sum(asia_sales),
+            `North America` = sum(north_american_sales),
+            Europe = sum(european_sales),
+            Japan = sum(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  #filter(!Region == "Global") %>%
+  relocate(`Sales`, .before = Region) 
+
+genre_sales_TOP_average_db <- videogamesales_db %>%
+  group_by(release_year, genre) %>%
+  summarize(Global = mean(global_sales),
+            Asia = mean(asia_sales),
+            `North America` = mean(north_american_sales),
+            Europe = mean(european_sales),
+            Japan = mean(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  #filter(!Region == "Global") %>%
+  relocate(`Sales`, .before = Region) %>%
+  mutate(`Sales` = as.double(formatC(as.double(as.character(round(`Sales`, 2))), digits = 2, format = "f")))
+
+#return correct dataset based on selection
+genre_unitssold_datasetInput_table <- reactive({
+  req(input$genre_units_sold) 
+  if (input$genre_units_sold == "Total"){
+    genre_sales_table_df <- genre_sales_TOP_total_db %>% 
+      ungroup() %>%
+      filter(Region == input$genre_region_radio) %>%
+      select(-Region) %>%
+      filter(release_year >= input$genre_UnitsSold_YearRange[1] & release_year <= input$genre_UnitsSold_YearRange[2]) %>% 
+      arrange(desc(`Sales`)) %>% 
+      slice_head(n=5) %>%
+      relocate(genre, .after = Sales)
+    
+  }
+  else if (input$genre_units_sold == "Average"){
+    genre_sales_table_df <- genre_sales_TOP_average_db %>% 
+      ungroup() %>%
+      filter(Region == input$genre_region_radio) %>%
+      select(-Region) %>%
+      filter(release_year >= input$genre_UnitsSold_YearRange[1] & release_year <= input$genre_UnitsSold_YearRange[2]) %>% 
+      arrange(desc(`Sales`)) %>% 
+      slice_head(n=5) %>%
+      relocate(genre, .after = Sales)
+  }
+  return(genre_sales_table_df)
+}) 
+
+output$genre_sales_table <- function()({  
+  genre_unitssold_datasetInput_table() %>% 
+    kable(format ="html", align = 'c', col.names = c("Year", paste(input$units_sold, "Units Sold*"), "Region")) %>% 
+    kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") %>%
+    add_footnote(("in millions of copies"), notation = "symbol")
+  
+})
+
+
 ##########################################
 ####     Genre: Production Costs      ####
 ##########################################
 
+
+#data
+genre_total_productioncost_db <- videogamesales_db %>%
+  group_by(release_year) %>%
+  summarise(`Production Cost` = sum(`Production Cost`))
+
+genre_avg_productioncost_db <- videogamesales_db %>%
+  group_by(release_year) %>%
+  summarise(`Production Cost` = mean(`Production Cost`)) %>%
+  mutate(`Production Cost` = as.double(formatC(as.double(as.character(round(`Production Cost`, 2))), digits = 2, format = "f")))
+
+
+#return correct dataset based on selection
+genre_productioncost_datasetInput <- reactive({
+  req(input$genre_production_cost)
+  if (input$genre_production_cost == "Total"){
+    genre_productioncost_dataset <- genre_total_productioncost_db %>% filter(release_year >= input$genre_ProductionCosts_YearRange[1] & release_year <= input$genre_ProductionCosts_YearRange[2])
+  }
+  else if (input$genre_production_cost == "Average"){
+    genre_productioncost_dataset <- genre_avg_productioncost_db %>% filter(release_year >= input$genre_ProductionCosts_YearRange[1] & release_year <= input$genre_ProductionCosts_YearRange[2])
+  }
+  return(genre_productioncost_dataset)
+}) 
+
+
+#plot production costs total
+output$genre_productioncost_plot <- renderPlotly({
+  g <- ggplot(genre_productioncost_datasetInput(), 
+              aes(x=release_year, 
+                  y=`Production Cost`, 
+                  group = 1,
+                  text = paste("Year: ", release_year,
+                               "<br>", input$genre_production_cost, "Production Cost: ", round(`Production Cost`, digits = 2)))) + 
+    geom_line() + 
+    geom_point() +
+    ggtitle(paste(input$genre_production_cost, "Production Costs Across Regions")) +
+    labs(x="Year",
+         y="Millions of Dollars") +
+    theme_bw() + 
+    theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
+          legend.position = "right",
+          axis.title.x = element_text(size = 10, vjust = 1.3),
+          axis.title.y = element_text(size = 10, vjust = 1.3),
+          axis.text = element_text(size = 9))
+  ggplotly(g, tooltip = "text")
+})
+
+#table
+#data
+genre_table_total_prodcost_db <- videogamesales_db %>%
+  group_by(release_year) %>%
+  summarise(`Production Cost` = sum(`Production Cost`))
+
+genre_table_avg_prodcost_db <- videogamesales_db %>%
+  group_by(release_year) %>%
+  summarise(`Production Cost` = mean(`Production Cost`)) %>%
+  mutate(`Production Cost` = as.double(formatC(as.double(as.character(round(`Production Cost`, 2))), digits = 2, format = "f")))
+
+
+
+#select correct dataset
+genre_productioncost_datasetInput_table <- reactive({
+  req(input$genre_production_cost)
+  if (input$genre_production_cost == "Total"){
+    genre_productioncost_dataset_table <- genre_table_total_prodcost_db %>% filter(release_year >= input$genre_ProductionCosts_YearRange[1] & release_year <= input$genre_ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
+  }
+  else if (input$genre_production_cost == "Average"){
+    genre_productioncost_dataset_table <- genre_table_avg_prodcost_db %>% filter(release_year >= input$genre_ProductionCosts_YearRange[1] & release_year <= input$genre_ProductionCosts_YearRange[2]) %>% arrange(desc(`Production Cost`)) %>% slice_head(n=5) 
+  }
+  return(genre_productioncost_dataset_table)
+}) 
+
+
+output$genre_productioncost_table <- function()({  
+  genre_productioncost_datasetInput_table() %>% 
+    kable("html", align = 'c', col.names = c("Year", paste(input$genre_production_cost, "Production Cost*"))) %>% 
+    kable_styling(c("striped", "hover"), full_width = T, position = "center") %>%
+    add_footnote(("in millions of dollars"), notation = "symbol")
+  
+})
+
+
+
 ##########################################
 ####     Genre: Units Sold per Region ####
 ##########################################
+output$genre_unitsperregion_title <- renderText("Lifetime Units Sold per Region")
+output$genre_unitsperregion_instructions <- renderText({paste("To view data on lifetime units sold per region, please select a metric from the drop-down menu and a region below.")})
+output$genre_unitsperregion_table_title <- renderUI({
+  HTML(paste("<strong>Highest Lifetime Units Sold by Genre</strong>"))})
 
-##########################################
-####     Genre: Titles per Year       ####
-##########################################  
+#data
+genre_total_unitsperregion_db <- videogamesales_db %>%
+  group_by(genre) %>%
+  summarise(Global = sum(global_sales),
+            Asia = sum(asia_sales),
+            `North America` = sum(north_american_sales),
+            Europe = sum(european_sales),
+            Japan = sum(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") 
+
+genre_avg_unitsperregion_db <- videogamesales_db %>%
+  group_by(genre) %>%
+  summarise(Global = mean(global_sales),
+            Asia = mean(asia_sales),
+            `North America` = mean(north_american_sales),
+            Europe = mean(european_sales),
+            Japan = mean(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  mutate(`Sales` = as.double(formatC(as.double(as.character(round(`Sales`, 2))), digits = 2, format = "f")))
+
+#return correct dataset based on selection
+genre_unitsperregion_datasetInput <- reactive({
+  req(input$genre_unitsperregion)
+  if (input$genre_unitsperregion == "Total"){
+    genre_unitsperregion_dataset <- genre_total_unitsperregion_db %>% 
+      filter(Region == input$genre_unitsperregion_radio) 
+  }
+  else if (input$genre_unitsperregion == "Average"){
+    genre_unitsperregion_dataset <- genre_avg_unitsperregion_db %>% 
+      filter(Region == input$genre_unitsperregion_radio)
+  }
+  return(genre_unitsperregion_dataset)
+}) 
+
+
+##plot
+output$genre_unitsperregion_plot <- renderPlotly({
+  output$genre_unitsperregion_plot <- renderPlotly({
+    g <- ggplot(genre_unitsperregion_datasetInput(), 
+                aes(y = Sales, 
+                    x = genre, 
+                    fill = genre,
+                    group = 1,
+                    text = paste("genre: ", genre,
+                                 "<br>Region: ", Region,
+                                 "<br>", input$genre_units_sold, "Sales: ", round(`Sales`, digits = 2)))) +
+      geom_bar(stat='identity') +
+      labs(x="genre",
+           y="Number of Games Sold (in millions)",
+           color = "genre") +
+      ggtitle(paste(input$genre_units_sold, "Video Game Sales 2000-2020")) +
+      theme_bw() + 
+      theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
+            legend.position = "right",
+            axis.title.x = element_text(size = 10, vjust = 1.3),
+            axis.title.y = element_text(size = 10, vjust = 1.3),
+            axis.text = element_text(size = 9))
+    ggplotly(g, tooltip = "text")
+  })  
+
+}) 
+
+
+# output$genre_unitsperregion_plot <- renderPlot({
+#   colmap <-
+#     c("#bdb2ff", "#ffc6ff", "#33658A", "#3a506b", "#577590", "#43aa8b", "#90be6d", "#f8961e")
+#   
+#   genre_total_unitsperregion_db %>%
+#     mutate(Sales = (Sales/(sum(Sales))*100)) %>%
+#     ggplot(aes(x = "", y = Sales, fill = genre)) +
+#     geom_bar(
+#       stat = "identity",
+#       width = 1,
+#       color = "black",
+#       size = 1
+#     ) +
+#     theme_void() +
+#     theme(legend.position = "right",
+#           plot.title = element_text(hjust = 0.5, size = 14)) +
+#     coord_polar("y", start = 0) +
+#     scale_fill_manual(values = c(colmap)) +
+#     labs(title = "test")
+#   
+# })
+
+#table
+genre_unitsperregion_TOP_total_db <- videogamesales_db %>%
+  group_by(release_year, genre) %>%
+  summarise(Global = sum(global_sales),
+            Asia = sum(asia_sales),
+            `North America` = sum(north_american_sales),
+            Europe = sum(european_sales),
+            Japan = sum(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  #filter(!Region == "Global") %>%
+  relocate(`Sales`, .before = Region) 
+
+genre_unitsperregion_TOP_average_db <- videogamesales_db %>%
+  group_by(release_year, genre) %>%
+  summarize(Global = mean(global_sales),
+            Asia = mean(asia_sales),
+            `North America` = mean(north_american_sales),
+            Europe = mean(european_sales),
+            Japan = mean(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  #filter(!Region == "Global") %>%
+  relocate(`Sales`, .before = Region) %>%
+  mutate(`Sales` = as.double(formatC(as.double(as.character(round(`Sales`, 2))), digits = 2, format = "f")))
+
+#return correct dataset based on selection
+genre_unitsperregion_datasetInput_table <- reactive({
+  req(input$genre_unitsperregion) 
+  if (input$genre_unitsperregion == "Total"){
+    genre_unitsperregion_table_df <- genre_unitsperregion_TOP_total_db %>% 
+      ungroup() %>%
+      filter(Region == input$genre_unitsperregion_radio) %>%
+      select(-Region) %>%
+      arrange(desc(`Sales`)) %>% 
+      slice_head(n=5) %>%
+      relocate(genre, .after = Sales)
+    
+  }
+  else if (input$genre_unitsperregion == "Average"){
+    genre_unitsperregion_table_df <- genre_unitsperregion_TOP_average_db %>% 
+      ungroup() %>%
+      filter(Region == input$genre_unitsperregion_radio) %>%
+      select(-Region) %>%
+      arrange(desc(`Sales`)) %>% 
+      slice_head(n=5) %>%
+      relocate(genre, .after = Sales)
+  }
+  return(genre_unitsperregion_table_df)
+}) 
+
+output$genre_unitsperregion_table <- function()({  
+  genre_unitsperregion_datasetInput_table() %>% 
+    kable(format ="html", align = 'c', col.names = c("Year", paste(input$genre_unitsperregion, "Units Sold*"), "Genre")
+    ) %>% 
+    kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") %>%
+    add_footnote(("in millions of copies"), notation = "symbol")
+  
+})
+
+
+
+
+###################################################
+####     Genre: Titles per Region/Platform     ####
+###################################################  
+output$genre_titleyear_title <- renderText("Top Selling Titles")
+output$genre_titleyear_instructions <- renderText({paste("To view popular game titles per region and genre, check the boxes below.")})
+output$genre_titleyear_table_title <- renderUI({
+  HTML(paste("<strong>Top Titles by Genre</strong>"))})
+
+
+#table
+genre_titleyear_table_df <- videogamesales_db %>%
+  group_by(genre, title) %>%
+  summarise(Global = sum(global_sales),
+            Asia = sum(asia_sales),
+            `North America` = sum(north_american_sales),
+            Europe = sum(european_sales),
+            Japan = sum(japan_sales)) %>%
+  pivot_longer(cols = c(Global, Asia, `North America`, Europe, Japan),
+               names_to = "Region", values_to = "Sales") %>%
+  relocate(`Sales`, .before = Region) %>%
+  relocate(Region, .after = genre)
+
+output$genre_titleyear_table <- function()({
+  genre_titleyear_table_df %>%
+    ungroup() %>%
+    filter(Region %in% input$checkGroup_genre_region) %>%
+    filter(genre %in% input$checkGroup_genre_genre) %>%
+    group_by(title, genre, Region) %>%
+    summarise(Sales = sum(Sales)) %>%
+    arrange(desc(`Sales`)) %>%
+    ungroup() %>%
+    slice_head(n=10) %>%
+    relocate(genre, .after = Sales) %>%
+    relocate(Region, .after = genre) %>%
+    kable(format ="html", align = 'c', col.names = c("Title", "Units Sold*", "Genre", "Region")) %>%
+    kable_styling(c("striped", "hover"), font_size = 16, full_width = T, position = "center") %>%
+    add_footnote(("in millions of copies"), notation = "symbol")
+})
+
+
+
+
+
 
 # ------------------
 # Documentation Page
