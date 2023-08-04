@@ -39,7 +39,7 @@ server = function(input, output, session) {
   })
   
   output$units_sold_title <- renderText("Number of Units Sold")
-  output$units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu. The range of years populated can be adjusted through the slider. On the graph, double-click on the legend to isolate regions. Select regions in the map to view the summary of units sold for the year range specified.")})
+  output$units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu. The range of years populated can be adjusted through the slider. On the graph, double-click on the legend to isolate regions and single-click to populate additional regions. Select regions in the map to view the summary of units sold for the year range specified.")})
   output$units_sold_table_title <- renderUI({
     HTML(paste("<strong>Highest Years by Sales Volume:<br>", input$UnitsSold_YearRange[1], "to", input$UnitsSold_YearRange[2], "</strong>"))})
   
@@ -108,7 +108,7 @@ server = function(input, output, session) {
             axis.title.x = element_text(size = 10, vjust = 1.3),
             axis.title.y = element_text(size = 10, vjust = 1.3),
             axis.text = element_text(size = 9))
-    ggplotly(g, tooltip = "text")
+    ggplotly(g, tooltip = "text") %>% config(displayModeBar = F)
   })
   
   
@@ -290,7 +290,7 @@ server = function(input, output, session) {
             axis.title.x = element_text(size = 10, vjust = 1.3),
             axis.title.y = element_text(size = 10, vjust = 1.3),
             axis.text = element_text(size = 9))
-    ggplotly(g, tooltip = "text")
+    ggplotly(g, tooltip = "text") %>% config(displayModeBar = F)
   })
   
   #table
@@ -340,7 +340,7 @@ server = function(input, output, session) {
 
 #output text for side panel
 output$platform_units_sold_title <- renderText("Number of Units Sold")
-output$platform_units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu and a region below. The range of years populated can be adjusted through the slider. Double-click on the legend to isolate platforms in the graph.")})
+output$platform_units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu and a region below. The range of years populated can be adjusted through the slider. Double-click on the legend to isolate platforms in the graph and single-click to populate additional platforms")})
 output$platform_units_sold_table_title <- renderUI({
   HTML(paste("<strong>Highest Years by Sales Volume:<br>", input$platform_UnitsSold_YearRange[1], "to", input$platform_UnitsSold_YearRange[2], "</strong>"))})
 
@@ -409,7 +409,7 @@ output$platform_sales_totalavg_sum_plot <- renderPlotly({
           axis.title.x = element_text(size = 10, vjust = 1.3),
           axis.title.y = element_text(size = 10, vjust = 1.3),
           axis.text = element_text(size = 9))
-  ggplotly(g, tooltip = "text")
+  ggplotly(g, tooltip = "text") %>% config(displayModeBar = F)
 }) 
 
 
@@ -521,7 +521,7 @@ output$platform_productioncost_plot <- renderPlotly({
           axis.title.x = element_text(size = 10, vjust = 1.3),
           axis.title.y = element_text(size = 10, vjust = 1.3),
           axis.text = element_text(size = 9))
-  ggplotly(g, tooltip = "text")
+  ggplotly(g, tooltip = "text") %>% config(displayModeBar = F)
 })
 
 #table
@@ -627,7 +627,7 @@ output$platform_unitsperregion_plot <- renderPlotly({
           axis.title.x = element_text(size = 10, vjust = 1.3),
           axis.title.y = element_text(size = 10, vjust = 1.3),
           axis.text = element_text(size = 9))
-  ggplotly(g, tooltip = "text")
+  ggplotly(g, tooltip = "text") %>% config(displayModeBar = F)
 }) 
 
 
@@ -819,7 +819,7 @@ output$platform_titleyear_table <- function()({
 
 #output text for side panel
 output$genre_units_sold_title <- renderText("Number of Units Sold")
-output$genre_units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu and a region below. The range of years populated can be adjusted through the slider. Double-click on the legend to isolate genres in the graph.")})
+output$genre_units_sold_instructions <- renderText({paste("To view the number of game units sold across regions, please select a metric from the drop-down menu and a region below. The range of years populated can be adjusted through the slider. Double-click on the legend to isolate genres in the graph and single-click to populate additional genres")})
 output$genre_units_sold_table_title <- renderUI({
   HTML(paste("<strong>Highest Years by Sales Volume:<br>", input$genre_UnitsSold_YearRange[1], "to", input$genre_UnitsSold_YearRange[2], "</strong>"))})
 
@@ -888,7 +888,7 @@ output$genre_sales_totalavg_sum_plot <- renderPlotly({
           axis.title.x = element_text(size = 10, vjust = 1.3),
           axis.title.y = element_text(size = 10, vjust = 1.3),
           axis.text = element_text(size = 9))
-  ggplotly(g, tooltip = "text")
+  ggplotly(g, tooltip = "text") %>% config(displayModeBar = F)
 }) 
 
 
@@ -991,8 +991,9 @@ output$genre_productioncost_plot <- renderPlotly({
                   group = 1,
                   text = paste("Year: ", release_year,
                                "<br>", input$genre_production_cost, "Production Cost: ", round(`Production Cost`, digits = 2)))) + 
-    geom_line() + 
-    geom_point() +
+    geom_area(fill = "lightblue") + 
+    geom_point(color = "darkblue") +
+    geom_line(color = "darkblue") +
     ggtitle(paste(input$genre_production_cost, "Production Costs Across Regions")) +
     labs(x="Year",
          y="Millions of Dollars") +
@@ -1002,7 +1003,7 @@ output$genre_productioncost_plot <- renderPlotly({
           axis.title.x = element_text(size = 10, vjust = 1.3),
           axis.title.y = element_text(size = 10, vjust = 1.3),
           axis.text = element_text(size = 9))
-  ggplotly(g, tooltip = "text")
+  ggplotly(g, tooltip = "text") %>% config(displayModeBar = F)
 })
 
 #table
@@ -1076,65 +1077,40 @@ genre_unitsperregion_datasetInput <- reactive({
   req(input$genre_unitsperregion)
   if (input$genre_unitsperregion == "Total"){
     genre_unitsperregion_dataset <- genre_total_unitsperregion_db %>% 
-      filter(Region == input$genre_unitsperregion_radio) 
+      filter(Region == input$genre_unitsperregion_radio) %>%
+      mutate(Sales = (Sales/(sum(Sales)))*100) %>%
+      mutate(`Sales` = as.double(formatC(as.double(as.character(round(`Sales`, 2))), digits = 0, format = "f")))
   }
   else if (input$genre_unitsperregion == "Average"){
     genre_unitsperregion_dataset <- genre_avg_unitsperregion_db %>% 
-      filter(Region == input$genre_unitsperregion_radio)
+      filter(Region == input$genre_unitsperregion_radio) %>%
+      mutate(Sales = (Sales/(sum(Sales)))*100) %>%
+      mutate(`Sales` = as.double(formatC(as.double(as.character(round(`Sales`, 2))), digits = 0, format = "f")))
   }
   return(genre_unitsperregion_dataset)
 }) 
 
 
 ##plot
-output$genre_unitsperregion_plot <- renderPlotly({
-  output$genre_unitsperregion_plot <- renderPlotly({
-    g <- ggplot(genre_unitsperregion_datasetInput(), 
+output$genre_unitsperregion_plot <- renderPlot({
+    ggplot(genre_unitsperregion_datasetInput(), 
                 aes(y = Sales, 
-                    x = genre, 
-                    fill = genre,
-                    group = 1,
-                    text = paste("genre: ", genre,
-                                 "<br>Region: ", Region,
-                                 "<br>", input$genre_units_sold, "Sales: ", round(`Sales`, digits = 2)))) +
-      geom_bar(stat='identity') +
+                    x = "", 
+                    fill = genre)) +
+      geom_bar(stat='identity', width=1, color="white") +
       labs(x="genre",
            y="Number of Games Sold (in millions)",
            color = "genre") +
-      ggtitle(paste(input$genre_units_sold, "Video Game Sales 2000-2020")) +
-      theme_bw() + 
-      theme(plot.title = element_text(size=14, face="bold", hjust = 0.5),
-            legend.position = "right",
-            axis.title.x = element_text(size = 10, vjust = 1.3),
-            axis.title.y = element_text(size = 10, vjust = 1.3),
-            axis.text = element_text(size = 9))
-    ggplotly(g, tooltip = "text")
+      ggtitle(paste(input$genre_unitsperregion, "Video Game Sales 2000-2020")) +
+      theme_void() + 
+      theme(plot.title = element_text(size=19, face="bold", hjust = 0.5),
+            legend.position = "right") +
+      scale_fill_discrete(name = "Genre")+
+      coord_polar("y", start = 0) +
+      geom_text(aes(label = paste0(Sales, "%")), position = position_stack(vjust=0.5), color = "white", size = 5)
+    
   })  
 
-}) 
-
-
-# output$genre_unitsperregion_plot <- renderPlot({
-#   colmap <-
-#     c("#bdb2ff", "#ffc6ff", "#33658A", "#3a506b", "#577590", "#43aa8b", "#90be6d", "#f8961e")
-#   
-#   genre_total_unitsperregion_db %>%
-#     mutate(Sales = (Sales/(sum(Sales))*100)) %>%
-#     ggplot(aes(x = "", y = Sales, fill = genre)) +
-#     geom_bar(
-#       stat = "identity",
-#       width = 1,
-#       color = "black",
-#       size = 1
-#     ) +
-#     theme_void() +
-#     theme(legend.position = "right",
-#           plot.title = element_text(hjust = 0.5, size = 14)) +
-#     coord_polar("y", start = 0) +
-#     scale_fill_manual(values = c(colmap)) +
-#     labs(title = "test")
-#   
-# })
 
 #table
 genre_unitsperregion_TOP_total_db <- videogamesales_db %>%

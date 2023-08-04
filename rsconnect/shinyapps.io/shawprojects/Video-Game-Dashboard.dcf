@@ -5,6 +5,6 @@ account: shawprojects
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 9547407
-bundleId: 7525481
+bundleId: 7530253
 url: https://shawprojects.shinyapps.io/Video-Game-Dashboard/
 version: 1

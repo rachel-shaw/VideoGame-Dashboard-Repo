@@ -88,7 +88,8 @@ ui = navbarPage(
                             label = "Year Range",
                             min = 2000,
                             max = 2020,
-                            value = c(2000,2020)),
+                            value = c(2000,2020),
+                            sep = ""),
                 tags$br(),
                 tags$br(),
                 tags$br(),
@@ -145,7 +146,8 @@ ui = navbarPage(
                           label = "Year Range",
                           min = 2000,
                           max = 2020,
-                          value = c(2000,2020)),
+                          value = c(2000,2020),
+                          sep = ""),
                 br(),
               ), #end of sidebarPanel
               
@@ -213,7 +215,8 @@ ui = navbarPage(
                           label = "Year Range",
                           min = 2000,
                           max = 2020,
-                          value = c(2000,2020)),             
+                          value = c(2000,2020),
+                          sep = ""),             
               
               tags$br(),
               tags$br(),
@@ -249,7 +252,8 @@ ui = navbarPage(
                           label = "Year Range",
                           min = 2000,
                           max = 2020,
-                          value = c(2000,2020)),
+                          value = c(2000,2020),
+                          sep = ""),
               br(),
             ), #end of sidebarPanel
 
@@ -449,7 +453,8 @@ ui = navbarPage(
                           label = "Year Range",
                           min = 2000,
                           max = 2020,
-                          value = c(2000,2020)),             
+                          value = c(2000,2020),
+                          sep = ""),             
               
               tags$br(),
               tags$br(),
@@ -485,7 +490,8 @@ ui = navbarPage(
                           label = "Year Range",
                           min = 2000,
                           max = 2020,
-                          value = c(2000,2020)),
+                          value = c(2000,2020),
+                          sep = ""),
               br(),
             ), #end of sidebarPanel
             
@@ -535,7 +541,7 @@ ui = navbarPage(
             
             mainPanel(
               fluidRow(
-                column(8, plotlyOutput("genre_unitsperregion_plot")),
+                column(8, plotOutput("genre_unitsperregion_plot")),
                 h4(htmlOutput("genre_unitsperregion_table_title"), align = "center"),
                 column(4, tableOutput("genre_unitsperregion_table"))),
               
@@ -559,7 +565,6 @@ ui = navbarPage(
               textOutput("genre_titleyear_instructions"),
               
               tags$br(),
-              
               
               checkboxGroupInput("checkGroup_genre_region",
                                  label = "Select Region",
