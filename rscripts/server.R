@@ -1223,9 +1223,23 @@ output$genre_titleyear_table <- function()({
 # Documentation Page
 # ------------------
 
+getPageDoc <- function() {
+  return(includeHTML("VGDB-DocumentPage.html"))
+}
+output$VGDBDocumentPage <- renderUI({
+  getPageDoc()
+})
+
 # ------------------
 # About Page
 # ------------------
 
+# getPageAbo <- function() {
+#   return(includeHTML("about.html"))
+# }
+# output$abo <- renderUI({
+#   getPageAbo()
+# })
 
-}
+
+} #final close

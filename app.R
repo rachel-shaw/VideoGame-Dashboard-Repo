@@ -631,9 +631,10 @@ ui = navbarPage(
   # Documentation Page
   # ------------------
 
-    
+  #tabPanel('How to use it?', uiOutput('markdown'))
+  
   tabPanel("Documentation",
-           fluidPage(htmlOutput("doc"))),
+           fluidPage(uiOutput("VGDBDocumentPage"))),
 
   # ------------------
   # About Page
