@@ -1571,11 +1571,12 @@ border-radius: 0px;
 </div>
 
 
-<div id="technical-walkthrough-of-dashboard" class="section level1">
-<h1>Technical Walkthrough of Dashboard</h1>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
 <p>The dashboard was built with RShiny. The structure of the code base
 is outlined below. Please use the table of contents to the left to jump
 to the desired section.</p>
+</div>
 <div id="the-dataset" class="section level2">
 <h2>1. The Dataset</h2>
 <p>The dataset used in this dashboard is entitled <strong>“Video Game
@@ -3616,37 +3617,34 @@ using Ggplotly, while the tables used the Kable library.</p>
 <span id="cb5-1317"><a href="#cb5-1317" tabindex="-1"></a><span class="co"># About Page</span></span>
 <span id="cb5-1318"><a href="#cb5-1318" tabindex="-1"></a><span class="co"># ------------------</span></span>
 <span id="cb5-1319"><a href="#cb5-1319" tabindex="-1"></a></span>
-<span id="cb5-1320"><a href="#cb5-1320" tabindex="-1"></a><span class="co"># getPageAbo &lt;- function() {</span></span>
-<span id="cb5-1321"><a href="#cb5-1321" tabindex="-1"></a><span class="co">#   return(includeHTML(&quot;about.html&quot;))</span></span>
-<span id="cb5-1322"><a href="#cb5-1322" tabindex="-1"></a><span class="co"># }</span></span>
-<span id="cb5-1323"><a href="#cb5-1323" tabindex="-1"></a><span class="co"># output$abo &lt;- renderUI({</span></span>
-<span id="cb5-1324"><a href="#cb5-1324" tabindex="-1"></a><span class="co">#   getPageAbo()</span></span>
-<span id="cb5-1325"><a href="#cb5-1325" tabindex="-1"></a><span class="co"># })</span></span>
+<span id="cb5-1320"><a href="#cb5-1320" tabindex="-1"></a>getPageAbo <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb5-1321"><a href="#cb5-1321" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">includeHTML</span>(<span class="st">&quot;AboutMe.html&quot;</span>))</span>
+<span id="cb5-1322"><a href="#cb5-1322" tabindex="-1"></a>}</span>
+<span id="cb5-1323"><a href="#cb5-1323" tabindex="-1"></a>output<span class="sc">$</span>AboutMe <span class="ot">&lt;-</span> <span class="fu">renderUI</span>({</span>
+<span id="cb5-1324"><a href="#cb5-1324" tabindex="-1"></a>  <span class="fu">getPageAbo</span>()</span>
+<span id="cb5-1325"><a href="#cb5-1325" tabindex="-1"></a>})</span>
 <span id="cb5-1326"><a href="#cb5-1326" tabindex="-1"></a></span>
-<span id="cb5-1327"><a href="#cb5-1327" tabindex="-1"></a></span>
-<span id="cb5-1328"><a href="#cb5-1328" tabindex="-1"></a>} <span class="co">#final close</span></span></code></pre></div>
+<span id="cb5-1327"><a href="#cb5-1327" tabindex="-1"></a>} <span class="co">#final close</span></span></code></pre></div>
 </div>
 </div>
 <div id="documentation-page" class="section level2">
 <h2>3. Documentation Page</h2>
-<p>This page was written as an HTML fille via RMarkdown and read into
-the RShiny dashboard. Please see the bottom of the <strong><em>UI and
-Server scripts</em></strong> under <strong>Main Page</strong> to view
-code.</p>
+<p>This page was written as an HTML file via RMarkdown and read into the
+RShiny dashboard. Please see the bottom of the <strong><em>UI and Server
+scripts</em></strong> under <strong>Main Page</strong> to view code.</p>
 </div>
 <div id="about-page" class="section level2">
 <h2>4. About Page</h2>
-<p>This page was written in ___ and read into the RShiny dashboard.
-Please see the bottom of the <strong><em>UI and Server
+<p>This page was written as an HTLM file via RMarkdown and read into the
+RShiny dashboard. Please see the bottom of the <strong><em>UI and Server
 scripts</em></strong> under <strong>Main Page</strong> to view code.</p>
 <p><br> <br> <br> <br> <br></p>
 <center>
-<div id="all-code-is-available-on-my-githib-page" class="section level4">
-<h4>All code is available on my <a href="https://github.com/rachel-shaw/VideoGame-Dashboard-Repo">GitHib
+<div id="all-code-is-available-on-my-github-page" class="section level4">
+<h4>All code is available on my <a href="https://github.com/rachel-shaw/VideoGame-Dashboard-Repo">GitHub
 page</a></h4>
 </center>
 <p><br> <br> <br> <br> <br></p>
-</div>
 </div>
 </div>
 

@@ -42,7 +42,7 @@ ui = navbarPage(
     # App title ----
     titlePanel(div(
       windowTitle = "",
-      img(src = "titlebanner_blue.jpg", width = "100%", class = "bg"),
+      img(src = "Dashboard_Title_Banner2.jpg", width = "100%", class = "bg"),
     )),
   
                                                     ##########################################
@@ -633,7 +633,13 @@ ui = navbarPage(
 
   #tabPanel('How to use it?', uiOutput('markdown'))
   
-  tabPanel("Documentation",
+  tabPanel("Documentation",   
+           # App title ----
+           titlePanel(div(
+             windowTitle = "",
+             img(src = "Documentation_Banner2.jpg", width = "100%", class = "bg"),
+           )),
+           
            fluidPage(uiOutput("VGDBDocumentPage"))),
 
   # ------------------
@@ -641,8 +647,15 @@ ui = navbarPage(
   # ------------------
   
   tabPanel("About",
-           fluidPage(htmlOutput("abo"))),
+           # App title ----
+           titlePanel(div(
+             windowTitle = "",
+             img(src = "About_Me_Banner2.jpg", width = "100%", class = "bg"),
+           )),
+           
+           fluidPage(htmlOutput("AboutMe"))),
   
+
   
   # credit banner----
   footer = (div(

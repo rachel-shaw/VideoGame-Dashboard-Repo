@@ -1234,12 +1234,12 @@ output$VGDBDocumentPage <- renderUI({
 # About Page
 # ------------------
 
-# getPageAbo <- function() {
-#   return(includeHTML("about.html"))
-# }
-# output$abo <- renderUI({
-#   getPageAbo()
-# })
+getPageAbo <- function() {
+  return(includeHTML("AboutMe.html"))
+}
+output$AboutMe <- renderUI({
+  getPageAbo()
+})
 
 
 } #final close

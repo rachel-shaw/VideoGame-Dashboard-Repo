@@ -14,7 +14,7 @@ knitr::opts_chunk$set(warning=FALSE)
 ```
 
 
-# Technical Walkthrough of Dashboard
+## Overview
 
 The dashboard was built with RShiny. The structure of the code base is outlined below. Please use the table of contents to the left to jump to the desired section. 
 
@@ -2036,13 +2036,12 @@ output$VGDBDocumentPage <- renderUI({
 # About Page
 # ------------------
 
-# getPageAbo <- function() {
-#   return(includeHTML("about.html"))
-# }
-# output$abo <- renderUI({
-#   getPageAbo()
-# })
-
+getPageAbo <- function() {
+  return(includeHTML("AboutMe.html"))
+}
+output$AboutMe <- renderUI({
+  getPageAbo()
+})
 
 } #final close
 ```
@@ -2050,11 +2049,11 @@ output$VGDBDocumentPage <- renderUI({
 
 ## 3. Documentation Page
 
-This page was written as an HTML fille via RMarkdown and read into the RShiny dashboard. Please see the bottom of the ***UI and Server scripts*** under **Main Page** to view code. 
+This page was written as an HTML file via RMarkdown and read into the RShiny dashboard. Please see the bottom of the ***UI and Server scripts*** under **Main Page** to view code. 
 
 ## 4. About Page
 
-This page was written in ___ and read into the RShiny dashboard. Please see the bottom of the ***UI and Server scripts*** under **Main Page** to view code. 
+This page was written as an HTLM file via RMarkdown and read into the RShiny dashboard. Please see the bottom of the ***UI and Server scripts*** under **Main Page** to view code. 
 
 <br>
 <br>
