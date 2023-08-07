@@ -67,7 +67,7 @@ ui = navbarPage(
           column(12, align = "center", 
           h2(textOutput("welcome")),
           tags$br(),
-          htmlOutput("welcome_details"),
+          h4(htmlOutput("welcome_details")),
           
           tags$hr(),
           ),

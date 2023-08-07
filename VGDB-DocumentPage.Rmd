@@ -2056,4 +2056,20 @@ This page was written as an HTML fille via RMarkdown and read into the RShiny da
 
 This page was written in ___ and read into the RShiny dashboard. Please see the bottom of the ***UI and Server scripts*** under **Main Page** to view code. 
 
+<br>
+<br>
+<br>
+<br>
+<br>
 
+<center>
+
+#### All code is available on my [GitHub page](https://github.com/rachel-shaw/VideoGame-Dashboard-Repo)
+
+</center>
+
+<br>
+<br>
+<br>
+<br>
+<br>
