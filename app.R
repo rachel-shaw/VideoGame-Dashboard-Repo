@@ -34,7 +34,7 @@ library(plotly)
 # ------------------
 
 ui = navbarPage(
-  "R. Shaw Portfoilo",
+  "R. Shaw Portfolio",
   theme = shinytheme("flatly"),
   tabPanel(
     "Main",
